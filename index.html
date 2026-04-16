@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Discord AI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+<!-- SERVER BAR -->
+<div class="servers">
+  <div class="server active">N</div>
+</div>
+
+<!-- CHANNELS -->
+<div class="channels">
+
+  <div class="me" id="me">loading...</div>
+
+  <button onclick="createChannel()">+ kanal</button>
+
+  <div id="channelList"></div>
+
+</div>
+
+<!-- CHAT -->
+<div class="chat">
+
+  <div class="header" id="header"># genel</div>
+
+  <div id="messages" class="messages"></div>
+
+  <div class="typing" id="typing"></div>
+
+  <div class="input">
+    <input id="input" placeholder="@nexus yaz... #file">
+    <button onclick="send()">Gönder</button>
+  </div>
+
+</div>
+
+<!-- FILES -->
+<div class="files">
+
+  <div class="title">Files</div>
+
+  <div id="files"></div>
+
+  <textarea id="editor"></textarea>
+
+  <button onclick="saveFile()">Save</button>
+
+</div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
