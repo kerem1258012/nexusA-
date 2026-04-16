@@ -1,12 +1,18 @@
-let user="user#"+Math.floor(Math.random()*9999);
+let user = localStorage.getItem("user");
+
+if(!user){
+  user = prompt("kullanıcı adı:");
+  localStorage.setItem("user",user);
+}
+
 document.getElementById("user").innerText=user;
 
-let channel="general";
-
+/* STATE */
+let channel="genel";
 let db=JSON.parse(localStorage.getItem("db")||"{}");
 let files=JSON.parse(localStorage.getItem("files")||"[]");
 
-if(!db.general) db.general=[];
+if(!db.genel) db.genel=[];
 
 /* SAVE */
 function save(){
@@ -16,28 +22,28 @@ function save(){
 
 /* CHANNEL */
 function createChannel(){
-  let name=prompt("channel");
-  if(!name) return;
-  db[name]=[];
+  let n=prompt("kanal adı");
+  if(!n) return;
+  db[n]=[];
   renderChannels();
 }
 
 /* RENDER CHANNELS */
 function renderChannels(){
-  let box=document.getElementById("channelList");
+  let box=document.getElementById("channels");
   box.innerHTML="";
 
   Object.keys(db).forEach(c=>{
     let d=document.createElement("div");
     d.innerText="# "+c;
-    d.onclick=()=>switchChannel(c);
+    d.onclick=()=>switchC(c);
     box.appendChild(d);
   });
 }
 
-function switchChannel(c){
+function switchC(c){
   channel=c;
-  document.getElementById("header").innerText="# "+c;
+  document.getElementById("title").innerText="# "+c;
   render();
 }
 
@@ -46,6 +52,8 @@ function send(){
   let input=document.getElementById("input");
   let text=input.value;
   if(!text) return;
+
+  if(!db[channel]) db[channel]=[];
 
   db[channel].push({user,text});
   input.value="";
@@ -56,15 +64,9 @@ function send(){
     renderFiles();
   }
 
-  /* AI */
+  /* AI HOOK */
   if(text.startsWith("@nexus")){
-    window.nexusAI(text,channel);
-  }
-
-  /* MENTION */
-  if(text.includes("@")){
-    document.getElementById("typing").innerText="mention detected";
-    setTimeout(()=>document.getElementById("typing").innerText="",1000);
+    ai(text);
   }
 
   save();
@@ -88,7 +90,7 @@ function render(){
 
 /* FILE SYSTEM */
 function renderFiles(){
-  let box=document.getElementById("files");
+  let box=document.querySelector(".files");
   box.innerHTML="";
 
   files.forEach((f,i)=>{
@@ -96,8 +98,8 @@ function renderFiles(){
     d.innerText=f.name;
 
     d.onclick=()=>{
-      document.getElementById("editor").value=f.content;
-      window.current=i;
+      document.getElementById("code").value=f.content;
+      window.cur=i;
     };
 
     box.appendChild(d);
@@ -105,23 +107,37 @@ function renderFiles(){
 }
 
 function newFile(){
-  let name=prompt("file");
-  files.push({name,content:""});
+  let n=prompt("file");
+  files.push({name:n,content:""});
   renderFiles();
   save();
 }
 
 function saveFile(){
-  if(window.current==null) return;
-  files[window.current].content=document.getElementById("editor").value;
+  if(window.cur==null) return;
+  files[window.cur].content=document.getElementById("code").value;
   save();
 }
 
-function runFile(){
-  document.getElementById("terminal").innerText="running...\n"+document.getElementById("editor").value;
+function run(){
+  document.getElementById("terminal").innerText=
+  document.getElementById("code").value;
 }
 
-/* INIT LOOP */
+/* AI (SIMPLIFIED HOOK) */
+function ai(text){
+  setTimeout(()=>{
+    db[channel].push({
+      user:"Nexus",
+      text:"AI: "+text.replace("@nexus","")
+    });
+
+    render();
+    save();
+  },600);
+}
+
+/* INIT */
 renderChannels();
 render();
 renderFiles();
