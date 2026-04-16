@@ -139,72 +139,57 @@ window.createChannel = function(){
 ========================= */
 window.nexusAI = async function(text){
 
-  const models = [
-    "llama-3.1-8b-instant",
-    "llama3-70b-8192",
-    "mixtral-8x7b-32768",
-    "gemma2-9b-it"
-  ];
+  const API_KEY = "AQ.Ab8RN6LcpLsg8RHPZRon3xW4PoRdQp6WlFijRH2mEsw7nnRvCg";
 
   const prompt = text.replace("@nexus","");
 
-  for(const model of models){
+  try{
 
-    try{
-
-      console.log("🧠 TRY MODEL:", model);
-
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
-        method:"POST",
-        headers:{
-          "Authorization":"Bearer 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",
-          "Content-Type":"application/json"
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
         },
-        body:JSON.stringify({
-          model,
-          messages:[
+        body: JSON.stringify({
+          contents: [
             {
-              role:"system",
-              content:"Sen Nexus AI'sın. Türkçe kısa ve net cevap ver."
-            },
-            {
-              role:"user",
-              content:prompt
+              parts: [
+                {
+                  text: "Sen Nexus AI'sın. Türkçe kısa ve net cevap ver.\n\nKullanıcı: " + prompt
+                }
+              ]
             }
-          ],
-          temperature:0.7,
-          max_tokens:500
+          ]
         })
-      });
-
-      const data = await res.json();
-
-      console.log("📦 RESPONSE:", model, data);
-
-      if(data?.error) continue;
-
-      const reply = data?.choices?.[0]?.message?.content;
-
-      if(reply){
-
-        await addDoc(ref(),{
-          user:"🤖 Nexus",
-          text:`(${model}) ${reply}`,
-          time:Date.now()
-        });
-
-        return;
       }
+    );
 
-    }catch(err){
-      console.log("❌ MODEL FAIL:", model, err);
-      continue;
-    }
+    const data = await res.json();
+
+    console.log("🔥 GEMINI RESPONSE:", data);
+
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.error?.message ||
+      "AI cevap yok";
+
+    await addDoc(ref(),{
+      user:"🤖 Nexus",
+      text:reply,
+      time:Date.now()
+    });
+
+  }catch(err){
+
+    console.log("❌ GEMINI ERROR:", err);
+
+    await addDoc(ref(),{
+      user:"🤖 Nexus",
+      text:"AI bağlantı hatası (Gemini)",
+      time:Date.now()
+    });
+
   }
-
-  await addDoc(ref(),{
-    user:"🤖 Nexus",
-    text:"AI hiçbir modelde çalışmadı (API / key / limit sorunu)",
-    time:Date.now()
-  });
 };
