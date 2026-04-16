@@ -15,31 +15,61 @@ body{
   width:70px;
   background:#111827;
   display:flex;
-  justify-content:center;
-  padding-top:10px;
+  flex-direction:column;
+  align-items:center;
 }
 
-.server{
+.logo{
   width:40px;
   height:40px;
   background:#5865f2;
-  border-radius:12px;
+  margin:10px;
   display:flex;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
+  border-radius:10px;
+}
+
+.srv{
+  width:40px;
+  height:40px;
+  margin:5px;
+  background:#1f2937;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.srv.active{
+  background:#22c55e;
 }
 
 /* CHANNELS */
 .channels{
-  width:240px;
+  width:260px;
   background:#111827;
   padding:10px;
 }
 
-.me{
-  padding:10px;
+.userBox{
   background:#1f2937;
+  padding:10px;
+  border-radius:8px;
   margin-bottom:10px;
+}
+
+.title{
+  font-size:12px;
+  opacity:.6;
+  margin-top:10px;
+}
+
+.cmdHint{
+  font-size:11px;
+  opacity:.6;
+  margin-top:10px;
 }
 
 #channelList div{
@@ -63,10 +93,10 @@ body{
   background:#111827;
 }
 
-.messages{
+#messages{
   flex:1;
-  overflow:auto;
   padding:10px;
+  overflow:auto;
 }
 
 .msg{
@@ -74,21 +104,27 @@ body{
   padding:8px;
   margin:5px;
   border-radius:8px;
+  max-width:70%;
 }
 
-.meMsg{
+.me{
   background:#22c55e;
   margin-left:auto;
 }
 
-/* INPUT */
+#typing{
+  font-size:12px;
+  opacity:.6;
+  padding-left:10px;
+}
+
 .input{
   display:flex;
   padding:10px;
   background:#111827;
 }
 
-.input input{
+input{
   flex:1;
   padding:10px;
   background:#1f2937;
@@ -96,23 +132,52 @@ body{
   color:white;
 }
 
-.input button{
+button{
   background:#5865f2;
   border:none;
   color:white;
 }
 
-/* FILES */
-.files{
-  width:300px;
+/* EDITOR */
+.editor{
+  width:320px;
   background:#0b0f14;
   border-left:1px solid #1f2937;
+  display:flex;
+  flex-direction:column;
+}
+
+.fileHeader{
   padding:10px;
+  background:#111827;
+}
+
+#files div{
+  padding:8px;
+  border-bottom:1px solid #1f2937;
+  cursor:pointer;
+}
+
+#files div:hover{
+  background:#1f2937;
 }
 
 #editor{
-  width:100%;
-  height:150px;
-  background:#1f2937;
+  flex:1;
+  background:#0b0f14;
   color:white;
+  border:none;
+}
+
+.editorBar{
+  display:flex;
+  gap:5px;
+  padding:5px;
+}
+
+#terminal{
+  height:100px;
+  background:black;
+  font-size:12px;
+  overflow:auto;
 }
