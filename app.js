@@ -1,318 +1,191 @@
-/**
- * NEXUS AI STUDIO - CORE ENGINE v2.5
- * Modern, Modüler ve Genişletilebilir Yapı
- */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, addDoc, onSnapshot, 
-    query, orderBy, limit, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- KONFİGÜRASYON ---
-const CONFIG = {
-    firebase: {
-        apiKey: "AIzaSyCwG8Cq5Gy1F7H5VP0W76pphhTJgJnEfcw",
-        authDomain: "ai-studio-applet-webapp-b12c3.firebaseapp.com",
-        projectId: "ai-studio-applet-webapp-b12c3",
-        storageBucket: "ai-studio-applet-webapp-b12c3.firebasestorage.app",
-        messagingSenderId: "338508580619",
-        appId: "1:338508580619:web:5a3e8445710652a125440e"
-    },
-    ai: {
-        endpoint: "https://api.groq.com/openai/v1/chat/completions",
-        key: "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",
-        model: "llama-3.3-70b-versatile"
-    }
+// --- FIREBASE KONFİGÜRASYON ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCwG8Cq5Gy1F7H5VP0W76pphhTJgJnEfcw",
+  authDomain: "ai-studio-applet-webapp-b12c3.firebaseapp.com",
+  projectId: "ai-studio-applet-webapp-b12c3",
+  storageBucket: "ai-studio-applet-webapp-b12c3.firebasestorage.app",
+  messagingSenderId: "338508580619",
+  appId: "1:338508580619:web:5a3e8445710652a125440e"
 };
 
-// --- UYGULAMA DURUMU (STATE) ---
-class NexusApp {
-    constructor() {
-        this.app = initializeApp(CONFIG.firebase);
-        this.db = getFirestore(this.app);
-        this.user = this.initUser();
-        this.currentChannel = "genel";
-        this.files = JSON.parse(localStorage.getItem("nexus_fs")) || {};
-        this.activeFile = null;
-        this.unsubscribe = null;
-        this.isAiThinking = false;
+// --- EKRANIN BEYAZ KALMASINI ÖNLEYEN GÜVENLİ ELEMENT SEÇİCİ ---
+const el = (id) => document.getElementById(id);
 
-        this.init();
+class NexusStudio {
+  constructor() {
+    try {
+      this.app = initializeApp(firebaseConfig);
+      this.db = getFirestore(this.app);
+      this.user = localStorage.getItem("user") || prompt("Kullanıcı adı:") || "Anonim";
+      localStorage.setItem("user", this.user);
+      
+      this.channel = "genel";
+      this.files = JSON.parse(localStorage.getItem("nexus_files")) || {};
+      this.activeFile = null;
+      this.unsubscribe = null;
+      this.GROQ_KEY = "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";
+
+      this.init();
+    } catch (err) {
+      console.error("Başlatma hatası:", err);
     }
+  }
 
-    // 1. Kullanıcı Başlatma
-    initUser() {
-        let saved = localStorage.getItem("nexus_username");
-        if (!saved) {
-            saved = prompt("Nexus Studio'ya hoş geldin! İsmin nedir?") || "Geliştirici";
-            localStorage.setItem("nexus_username", saved);
-        }
-        return saved;
+  init() {
+    // HTML Elementlerini Kontrol Et ve Doldur
+    if (el("user")) el("user").innerText = this.user;
+    if (el("title")) el("title").innerText = "# " + this.channel;
+
+    this.listenMessages();
+    this.renderFiles();
+    this.setupGlobalFunctions();
+    this.log("Sistem hazır. @nexus komutlarını bekliyor...", "success");
+  }
+
+  // Fonksiyonları Pencereye (Global) Bağla (HTML'deki onclick'lerin çalışması için)
+  setupGlobalFunctions() {
+    window.send = () => this.sendMessage();
+    window.createChannel = () => this.createChannel();
+    window.newFile = () => this.newFile();
+    window.downloadFile = () => this.downloadFile();
+    window.run = () => this.runCode();
+  }
+
+  listenMessages() {
+    if (this.unsubscribe) this.unsubscribe();
+    const q = query(collection(this.db, "channels", this.channel, "messages"), orderBy("time", "asc"), limit(100));
+    
+    this.unsubscribe = onSnapshot(q, snap => {
+      const box = el("messages");
+      if (!box) return;
+      box.innerHTML = "";
+      snap.forEach(doc => {
+        const m = doc.data();
+        const div = document.createElement("div");
+        div.className = "msg " + (m.user === this.user ? "me" : "");
+        div.innerText = `${m.user}: ${m.text}`;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    });
+  }
+
+  async sendMessage() {
+    const input = el("input");
+    if (!input || !input.value.trim()) return;
+
+    const text = input.value.trim();
+    input.value = "";
+
+    try {
+      await addDoc(collection(this.db, "channels", this.channel, "messages"), {
+        user: this.user,
+        text: text,
+        time: Date.now()
+      });
+
+      if (text.toLowerCase().includes("@nexus")) {
+        this.callAI(text);
+      }
+    } catch (e) {
+      this.log("Mesaj gönderilemedi: " + e.message, "error");
     }
+  }
 
-    // 2. Uygulama Başlatıcı
-    init() {
-        document.getElementById("user-display").innerText = this.user;
-        this.setupEventListeners();
-        this.listenMessages();
-        this.renderFileList();
-        this.logTerminal("Sistem başlatıldı. Terminal hazır...", "success");
-        
-        // Eğer kayıtlı dosya varsa ilkini aç
-        const firstFile = Object.keys(this.files)[0];
-        if (firstFile) this.openFile(firstFile);
+  async callAI(text) {
+    this.log("Nexus AI işleniyor...", "info");
+    const fileMatch = text.match(/#(\S+\.\S+)/);
+    const fileName = fileMatch ? fileMatch[1] : null;
+    const prompt = text.replace("@nexus", "").replace(/#\S+/, "").trim();
+
+    let systemMsg = "Sen Nexus AI'sın. Türkçe kısa cevap ver.";
+    if (fileName) systemMsg = `SADECE #${fileName} dosyasının kodunu yaz. Açıklama yapma, Markdown tırnakları kullanma.`;
+
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${this.GROQ_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "system", content: systemMsg }, { role: "user", content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      let reply = data.choices[0].message.content;
+
+      if (fileName) {
+        this.files[fileName] = reply;
+        localStorage.setItem("nexus_files", JSON.stringify(this.files));
+        this.renderFiles();
+        this.openFile(fileName);
+        reply = `✅ ${fileName} dosyası oluşturuldu ve editöre yüklendi!`;
+      }
+
+      await addDoc(collection(this.db, "channels", this.channel, "messages"), {
+        user: "🤖 Nexus",
+        text: reply,
+        time: Date.now()
+      });
+    } catch (err) {
+      this.log("AI Hatası: " + err.message, "error");
     }
+  }
 
-    // 3. Olay Dinleyicileri
-    setupEventListeners() {
-        // Klavye Kısayolları (Ctrl + S = Kaydet)
-        document.addEventListener("keydown", (e) => {
-            if (e.ctrlKey && e.key === "s") {
-                e.preventDefault();
-                this.saveCurrentFile();
-            }
-        });
+  renderFiles() {
+    const box = el("files");
+    if (!box) return;
+    box.innerHTML = "";
+    Object.keys(this.files).forEach(name => {
+      const div = document.createElement("div");
+      div.innerText = "📄 " + name;
+      div.style.padding = "10px";
+      div.style.cursor = "pointer";
+      div.onclick = () => this.openFile(name);
+      box.appendChild(div);
+    });
+  }
 
-        // Chat input enter takibi zaten HTML'de var, ancak global erişimler için:
-        window.send = () => this.handleSendMessage();
-        window.newFile = () => this.handleNewFile();
-        window.downloadActiveFile = () => this.downloadFile();
-        window.runCode = () => this.runSimulation();
-        window.createChannel = () => this.switchChannel();
+  openFile(name) {
+    this.activeFile = name;
+    if (el("code")) el("code").value = this.files[name];
+    this.log(name + " dosyası açıldı.", "info");
+  }
+
+  newFile() {
+    const name = prompt("Dosya adı (örn: test.js):");
+    if (name) {
+      this.files[name] = "// Yeni dosya";
+      this.renderFiles();
+      this.openFile(name);
     }
+  }
 
-    // 4. Firebase Mesaj Dinleyicisi
-    listenMessages() {
-        if (this.unsubscribe) this.unsubscribe();
-        
-        this.logTerminal(`${this.currentChannel} kanalına bağlanılıyor...`, "info");
-        const q = query(
-            collection(this.db, "channels", this.currentChannel, "messages"),
-            orderBy("time", "asc"),
-            limit(50)
-        );
+  downloadFile() {
+    if (!this.activeFile) return alert("Önce bir dosya seç!");
+    const content = el("code").value;
+    const blob = new Blob([content], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = this.activeFile;
+    a.click();
+  }
 
-        this.unsubscribe = onSnapshot(q, (snap) => {
-            const container = document.getElementById("messages-container");
-            container.innerHTML = "";
-            
-            snap.forEach(doc => {
-                const data = doc.data();
-                this.renderMessage(data);
-            });
-            container.scrollTop = container.scrollHeight;
-        });
-    }
+  runCode() {
+    this.log("Derleniyor... Başarılı.", "success");
+  }
 
-    // 5. Mesaj Render Etme
-    renderMessage(data) {
-        const container = document.getElementById("messages-container");
-        const isAI = data.user.includes("Nexus");
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `msg ${isAI ? 'ai-msg' : ''}`;
-        
-        // Zaman formatı
-        const time = data.time ? new Date(data.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
-
-        msgDiv.innerHTML = `
-            <div class="msg-header">
-                <span class="msg-user" style="color:${isAI ? '#5865f2' : '#fff'}">${data.user}</span>
-                <span class="msg-time">${time}</span>
-            </div>
-            <div class="msg-text">${this.formatText(data.text)}</div>
-        `;
-        container.appendChild(msgDiv);
-    }
-
-    // 6. Basit Markdown Formatlayıcı
-    formatText(text) {
-        return text
-            .replace(/`(.*?)`/g, '<code>$1</code>') // Inline kod
-            .replace(/\n/g, '<br>'); // Satır sonu
-    }
-
-    // 7. Mesaj Gönderme Mantığı
-    async handleSendMessage() {
-        const input = document.getElementById("chat-input");
-        const text = input.value.trim();
-        if (!text || this.isAiThinking) return;
-
-        input.value = "";
-        try {
-            await addDoc(collection(this.db, "channels", this.currentChannel, "messages"), {
-                user: this.user,
-                text: text,
-                time: Date.now()
-            });
-
-            if (text.toLowerCase().includes("@nexus")) {
-                this.handleAIAction(text);
-            }
-        } catch (err) {
-            this.logTerminal("Mesaj gönderilemedi: " + err.message, "error");
-        }
-    }
-
-    // 8. AI İşlem Merkezi
-    async handleAIAction(text) {
-        this.isAiThinking = true;
-        this.logTerminal("Nexus AI düşünüyor...", "info");
-
-        // Regex ile dosya adı yakalama (#script.js)
-        const fileMatch = text.match(/#(\S+\.\S+)/);
-        const fileName = fileMatch ? fileMatch[1] : null;
-        const prompt = text.replace("@nexus", "").replace(/#\S+/, "").trim();
-
-        let systemRole = "Sen Nexus Studio AI'sın. Türkçe, net ve teknik cevaplar ver.";
-        if (fileName) {
-            systemRole = `Sadece #${fileName} dosyası için kod üret. Asla açıklama yapma. Sadece kodun kendisini ver. Markdown tırnakları kullanma.`;
-        }
-
-        try {
-            const response = await fetch(CONFIG.ai.endpoint, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${CONFIG.ai.key}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: CONFIG.ai.model,
-                    messages: [
-                        { role: "system", content: systemRole },
-                        { role: "user", content: prompt }
-                    ],
-                    temperature: 0.7
-                })
-            });
-
-            const data = await response.json();
-            let aiText = data.choices[0].message.content;
-
-            if (fileName) {
-                this.saveFileToSystem(fileName, aiText);
-                aiText = `✨ [DOSYA OLUŞTURULDU] #${fileName} editöre eklendi.`;
-            }
-
-            await addDoc(collection(this.db, "channels", this.currentChannel, "messages"), {
-                user: "🤖 Nexus AI",
-                text: aiText,
-                time: Date.now()
-            });
-
-        } catch (err) {
-            this.logTerminal("AI Hatası: " + err.message, "error");
-        } finally {
-            this.isAiThinking = false;
-        }
-    }
-
-    // 9. Dosya Sistemi Mantığı
-    saveFileToSystem(name, content) {
-        this.files[name] = content;
-        localStorage.setItem("nexus_fs", JSON.stringify(this.files));
-        this.renderFileList();
-        this.openFile(name);
-        this.logTerminal(`${name} dosyası başarıyla kaydedildi.`, "success");
-    }
-
-    renderFileList() {
-        const list = document.getElementById("files-list");
-        list.innerHTML = "";
-        Object.keys(this.files).forEach(name => {
-            const div = document.createElement("div");
-            div.className = "file-item";
-            div.innerHTML = `<span>📄 ${name}</span><button class='del-btn' data-name='${name}'>×</button>`;
-            div.onclick = (e) => {
-                if (e.target.className !== 'del-btn') this.openFile(name);
-            };
-            
-            // Silme butonu
-            div.querySelector('.del-btn').onclick = (e) => {
-                e.stopPropagation();
-                this.deleteFile(name);
-            };
-
-            list.appendChild(div);
-        });
-    }
-
-    openFile(name) {
-        this.activeFile = name;
-        document.getElementById("code-textarea").value = this.files[name];
-        document.getElementById("active-filename-display").innerText = name;
-        document.getElementById("editor-tabs").innerHTML = `<div class="tab active">${name}</div>`;
-        this.logTerminal(`${name} açıldı.`, "info");
-    }
-
-    saveCurrentFile() {
-        if (!this.activeFile) return;
-        const content = document.getElementById("code-textarea").value;
-        this.files[this.activeFile] = content;
-        localStorage.setItem("nexus_fs", JSON.stringify(this.files));
-        this.logTerminal("Değişiklikler kaydedildi.", "success");
-    }
-
-    deleteFile(name) {
-        if (confirm(`${name} silinsin mi?`)) {
-            delete this.files[name];
-            localStorage.setItem("nexus_fs", JSON.stringify(this.files));
-            this.renderFileList();
-            this.logTerminal(`${name} silindi.`, "warn");
-        }
-    }
-
-    handleNewFile() {
-        const name = prompt("Dosya adı ve uzantısı:");
-        if (name && name.includes(".")) {
-            this.saveFileToSystem(name, "// Yeni kod sayfası\n");
-        } else {
-            alert("Geçersiz dosya adı. (Örn: script.js)");
-        }
-    }
-
-    // 10. İndirme ve Simülasyon
-    downloadFile() {
-        if (!this.activeFile) return;
-        const blob = new Blob([this.files[this.activeFile]], { type: "text/plain" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = this.activeFile;
-        a.click();
-        this.logTerminal("Dosya indirme başlatıldı.", "info");
-    }
-
-    runSimulation() {
-        this.logTerminal(`Derleme başlatılıyor: ${this.activeFile}...`, "info");
-        setTimeout(() => {
-            this.logTerminal("Bölge taraması tamamlandı. Modül aktif.", "success");
-            this.logTerminal("> Çıktı: Hello Nexus World!", "info");
-        }, 1000);
-    }
-
-    // 11. Terminal Loglama
-    logTerminal(msg, type = "info") {
-        const term = document.getElementById("terminal-output");
-        const colors = {
-            info: "#00bfff",
-            success: "#3fb950",
-            error: "#f85149",
-            warn: "#d29922"
-        };
-        const time = new Date().toLocaleTimeString();
-        term.innerHTML += `<div><span style="color:#888">[${time}]</span> <span style="color:${colors[type]}">${msg}</span></div>`;
-        term.scrollTop = term.scrollHeight;
-    }
-
-    switchChannel() {
-        const n = prompt("Geçmek istediğiniz kanal adı:");
-        if (n) {
-            this.currentChannel = n;
-            document.getElementById("current-channel-title").innerText = n;
-            this.listenMessages();
-        }
-    }
+  log(msg, type) {
+    const term = el("terminal");
+    if (!term) return;
+    const color = type === "error" ? "red" : type === "success" ? "lime" : "white";
+    term.innerHTML += `<div style="color:${color}">> ${msg}</div>`;
+    term.scrollTop = term.scrollHeight;
+  }
 }
 
 // Uygulamayı Başlat
-const nexus = new NexusApp();
+window.onload = () => new NexusStudio();
