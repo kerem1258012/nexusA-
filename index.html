@@ -11,66 +11,49 @@
 
 <div class="app">
 
-<!-- LEFT SERVER BAR -->
-<div class="servers">
-  <div class="logo">N</div>
-  <div class="srv active">GEN</div>
-  <div class="srv">DEV</div>
-  <div class="srv">AI</div>
-</div>
+<!-- LEFT -->
+<div class="sidebar">
 
-<!-- CHANNEL PANEL -->
-<div class="channels">
-
-  <div class="userBox">
-    <div id="user">user</div>
-    <div class="status">online</div>
+  <div class="profile">
+    <div class="avatar"></div>
+    <div>
+      <div id="user">user</div>
+      <small>online</small>
+    </div>
   </div>
 
-  <div class="title">CHANNELS</div>
+  <div class="section">KANALLAR</div>
+  <div id="channels"></div>
 
-  <div id="channelList"></div>
-
-  <button onclick="createChannel()">+ Channel</button>
-
-  <div class="title">COMMANDS</div>
-  <div class="cmdHint">
-    @nexus = AI<br>
-    #file = file create<br>
-    @user = mention
-  </div>
+  <button onclick="createChannel()">+ Kanal</button>
 
 </div>
 
 <!-- CHAT -->
 <div class="chat">
 
-  <div class="header" id="header"># general</div>
+  <div class="header" id="title"># genel</div>
 
   <div id="messages"></div>
 
-  <div id="typing"></div>
-
   <div class="input">
-    <input id="input" placeholder="@nexus / #file / message">
-    <button onclick="send()">Send</button>
+    <input id="input" placeholder="@nexus yaz... #file oluştur">
+    <button onclick="send()">➤</button>
   </div>
 
 </div>
 
-<!-- VS CODE -->
+<!-- EDITOR -->
 <div class="editor">
 
-  <div class="fileHeader">FILES</div>
+  <div class="files" id="files"></div>
 
-  <div id="files"></div>
+  <textarea id="code"></textarea>
 
-  <textarea id="editor" placeholder="// code editor"></textarea>
-
-  <div class="editorBar">
+  <div class="bar">
     <button onclick="newFile()">New</button>
     <button onclick="saveFile()">Save</button>
-    <button onclick="runFile()">Run</button>
+    <button onclick="run()">Run</button>
   </div>
 
   <div id="terminal"></div>
@@ -80,7 +63,6 @@
 </div>
 
 <script src="app.js"></script>
-<script src="ai.js"></script>
 
 </body>
 </html>
