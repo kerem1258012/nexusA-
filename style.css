@@ -147,8 +147,22 @@ textarea{
   overflow:auto;
 }
 
-/* MOBILE */
+/* FIX 1: CHAT SCROLL GARANTİ */
+#messages{
+  flex:1;
+  padding:10px;
+  overflow-y:auto;
+  height:100%;
+}
+
+/* FIX 2: SAF INPUT */
+.input input{
+  outline:none;
+}
+
+/* FIX 3: MOBILE FIX */
 @media(max-width:900px){
   .editor{display:none;}
-  .sidebar{width:200px;}
+  .sidebar{width:180px;}
+  .chat{flex:1;}
 }
