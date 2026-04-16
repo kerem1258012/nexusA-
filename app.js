@@ -8,7 +8,9 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* FIREBASE */
+/* =========================
+   FIREBASE
+========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCwG8Cq5Gy1F7H5VP0W76pphhTJgJnEfcw",
   authDomain: "ai-studio-applet-webapp-b12c3.firebaseapp.com",
@@ -21,7 +23,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* USER */
+/* =========================
+   USER
+========================= */
 let user = localStorage.getItem("user");
 
 if(!user){
@@ -29,22 +33,25 @@ if(!user){
   localStorage.setItem("user", user);
 }
 
-/* STATE */
+/* =========================
+   STATE
+========================= */
 let channel = "genel";
 let unsubscribe = null;
 
-/* UI SAFE */
+/* =========================
+   SAFE DOM
+========================= */
 function el(id){
   return document.getElementById(id);
 }
 
-/* INIT USER */
+/* =========================
+   INIT UI
+========================= */
 window.addEventListener("DOMContentLoaded", ()=>{
-  const u = el("user");
-  if(u) u.innerText = user;
-
-  const t = el("title");
-  if(t) t.innerText = "# genel";
+  if(el("user")) el("user").innerText = user;
+  if(el("title")) el("title").innerText = "# genel";
 });
 
 /* =========================
@@ -55,7 +62,7 @@ function ref(){
 }
 
 /* =========================
-   LISTENER FIX (IMPORTANT)
+   REALTIME CHAT (FIXED)
 ========================= */
 function listen(){
 
@@ -87,7 +94,7 @@ function listen(){
 listen();
 
 /* =========================
-   SEND MESSAGE FIX
+   SEND MESSAGE
 ========================= */
 window.send = async function(){
 
@@ -111,7 +118,7 @@ window.send = async function(){
 };
 
 /* =========================
-   CHANNEL FIX (REAL SWITCH)
+   CHANNEL FIX
 ========================= */
 window.createChannel = function(){
 
@@ -120,14 +127,15 @@ window.createChannel = function(){
 
   channel = name;
 
-  const title = el("title");
-  if(title) title.innerText = "# " + name;
+  if(el("title")){
+    el("title").innerText = "# " + name;
+  }
 
   listen();
 };
 
 /* =========================
-   AI FIX (SAFE + WORKING)
+   AI FIX (GROQ STABLE)
 ========================= */
 window.nexusAI = async function(text){
 
@@ -140,23 +148,29 @@ window.nexusAI = async function(text){
         "Content-Type":"application/json"
       },
       body:JSON.stringify({
-        model:"llama3-70b-8192",
+        model:"llama3-8b-8192",
         messages:[
           {
             role:"system",
-            content:"Sen Nexus AI'sın. Türkçe konuş, kısa cevap ver."
+            content:"Sen Nexus AI'sın. Türkçe kısa ve net cevap ver."
           },
           {
             role:"user",
-            content:text
+            content:text.replace("@nexus","")
           }
-        ]
+        ],
+        temperature:0.7
       })
     });
 
     const data = await res.json();
 
-    const reply = data?.choices?.[0]?.message?.content || "AI cevap yok";
+    console.log("GROQ RESPONSE:", data);
+
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.error?.message ||
+      "AI cevap yok";
 
     await addDoc(ref(),{
       user:"🤖 Nexus",
@@ -166,11 +180,11 @@ window.nexusAI = async function(text){
 
   }catch(err){
 
-    console.log(err);
+    console.log("AI ERROR:", err);
 
     await addDoc(ref(),{
       user:"🤖 Nexus",
-      text:"AI hata verdi",
+      text:"AI bağlantı hatası",
       time:Date.now()
     });
 
