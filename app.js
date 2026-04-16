@@ -135,79 +135,76 @@ window.createChannel = function(){
 };
 
 /* =========================
-   AI (FULL DEBUG VERSION)
+   AI AUTO MODEL SYSTEM
 ========================= */
 window.nexusAI = async function(text){
 
-  try{
+  const models = [
+    "llama-3.1-8b-instant",
+    "llama3-70b-8192",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it"
+  ];
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
-      method:"POST",
-      headers:{
-        "Authorization":"Bearer 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",
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        model:"llama-3.1-70b-versatile",
-        messages:[
-          {
-            role:"system",
-            content:"Sen Nexus AI'sın. Türkçe kısa ve net cevap ver."
-          },
-          {
-            role:"user",
-            content:text.replace("@nexus","")
-          }
-        ],
-        temperature:0.7
-      })
-    });
+  const prompt = text.replace("@nexus","");
 
-    const data = await res.json();
+  for(const model of models){
 
-    /* 🔥 DEBUG LOG */
-    console.log("🔥 GROQ RESPONSE:", data);
+    try{
 
-    /* ❗ API ERROR */
-    if(data.error){
-      console.error("❌ GROQ ERROR:", data.error);
+      console.log("🧠 TRY MODEL:", model);
 
-      await addDoc(ref(),{
-        user:"🤖 Nexus",
-        text:"AI ERROR: " + data.error.message,
-        time:Date.now()
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
+        method:"POST",
+        headers:{
+          "Authorization":"Bearer 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",
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          model,
+          messages:[
+            {
+              role:"system",
+              content:"Sen Nexus AI'sın. Türkçe kısa ve net cevap ver."
+            },
+            {
+              role:"user",
+              content:prompt
+            }
+          ],
+          temperature:0.7,
+          max_tokens:500
+        })
       });
 
-      return;
+      const data = await res.json();
+
+      console.log("📦 RESPONSE:", model, data);
+
+      if(data?.error) continue;
+
+      const reply = data?.choices?.[0]?.message?.content;
+
+      if(reply){
+
+        await addDoc(ref(),{
+          user:"🤖 Nexus",
+          text:`(${model}) ${reply}`,
+          time:Date.now()
+        });
+
+        return;
+      }
+
+    }catch(err){
+      console.log("❌ MODEL FAIL:", model, err);
+      continue;
     }
-
-    const reply = data?.choices?.[0]?.message?.content;
-
-    /* ❗ EMPTY RESPONSE */
-    if(!reply){
-      await addDoc(ref(),{
-        user:"🤖 Nexus",
-        text:"AI boş cevap döndü (debug açık)",
-        time:Date.now()
-      });
-      return;
-    }
-
-    await addDoc(ref(),{
-      user:"🤖 Nexus",
-      text:reply,
-      time:Date.now()
-    });
-
-  }catch(err){
-
-    console.log("💥 FETCH ERROR:", err);
-
-    await addDoc(ref(),{
-      user:"🤖 Nexus",
-      text:"Network/API hatası: console’a bak",
-      time:Date.now()
-    });
-
   }
+
+  await addDoc(ref(),{
+    user:"🤖 Nexus",
+    text:"AI hiçbir modelde çalışmadı (API / key / limit sorunu)",
+    time:Date.now()
+  });
 };
