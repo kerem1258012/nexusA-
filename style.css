@@ -1,0 +1,118 @@
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0b0f14;
+  color:white;
+}
+
+.app{
+  display:flex;
+  height:100vh;
+}
+
+/* SERVERS */
+.servers{
+  width:70px;
+  background:#111827;
+  display:flex;
+  justify-content:center;
+  padding-top:10px;
+}
+
+.server{
+  width:40px;
+  height:40px;
+  background:#5865f2;
+  border-radius:12px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* CHANNELS */
+.channels{
+  width:240px;
+  background:#111827;
+  padding:10px;
+}
+
+.me{
+  padding:10px;
+  background:#1f2937;
+  margin-bottom:10px;
+}
+
+#channelList div{
+  padding:8px;
+  cursor:pointer;
+}
+
+#channelList div:hover{
+  background:#1f2937;
+}
+
+/* CHAT */
+.chat{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.header{
+  padding:10px;
+  background:#111827;
+}
+
+.messages{
+  flex:1;
+  overflow:auto;
+  padding:10px;
+}
+
+.msg{
+  background:#1f2937;
+  padding:8px;
+  margin:5px;
+  border-radius:8px;
+}
+
+.meMsg{
+  background:#22c55e;
+  margin-left:auto;
+}
+
+/* INPUT */
+.input{
+  display:flex;
+  padding:10px;
+  background:#111827;
+}
+
+.input input{
+  flex:1;
+  padding:10px;
+  background:#1f2937;
+  border:none;
+  color:white;
+}
+
+.input button{
+  background:#5865f2;
+  border:none;
+  color:white;
+}
+
+/* FILES */
+.files{
+  width:300px;
+  background:#0b0f14;
+  border-left:1px solid #1f2937;
+  padding:10px;
+}
+
+#editor{
+  width:100%;
+  height:150px;
+  background:#1f2937;
+  color:white;
+}
