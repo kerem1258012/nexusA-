@@ -118,7 +118,7 @@ window.send = async function(){
 };
 
 /* =========================
-   CHANNEL FIX
+   CHANNEL SYSTEM
 ========================= */
 window.createChannel = function(){
 
@@ -135,7 +135,7 @@ window.createChannel = function(){
 };
 
 /* =========================
-   AI (GROQ FREE STABLE FIX)
+   AI (FULL DEBUG VERSION)
 ========================= */
 window.nexusAI = async function(text){
 
@@ -152,26 +152,46 @@ window.nexusAI = async function(text){
         messages:[
           {
             role:"system",
-            content:"Sen Nexus AI'sın. Türkçe konuş, kısa ve net cevap ver."
+            content:"Sen Nexus AI'sın. Türkçe kısa ve net cevap ver."
           },
           {
             role:"user",
             content:text.replace("@nexus","")
           }
         ],
-        temperature:0.7,
-        max_tokens:500
+        temperature:0.7
       })
     });
 
     const data = await res.json();
 
-    console.log("GROQ RESPONSE:", data);
+    /* 🔥 DEBUG LOG */
+    console.log("🔥 GROQ RESPONSE:", data);
 
-    const reply =
-      data?.choices?.[0]?.message?.content ||
-      data?.error?.message ||
-      "AI cevap yok";
+    /* ❗ API ERROR */
+    if(data.error){
+      console.error("❌ GROQ ERROR:", data.error);
+
+      await addDoc(ref(),{
+        user:"🤖 Nexus",
+        text:"AI ERROR: " + data.error.message,
+        time:Date.now()
+      });
+
+      return;
+    }
+
+    const reply = data?.choices?.[0]?.message?.content;
+
+    /* ❗ EMPTY RESPONSE */
+    if(!reply){
+      await addDoc(ref(),{
+        user:"🤖 Nexus",
+        text:"AI boş cevap döndü (debug açık)",
+        time:Date.now()
+      });
+      return;
+    }
 
     await addDoc(ref(),{
       user:"🤖 Nexus",
@@ -181,11 +201,11 @@ window.nexusAI = async function(text){
 
   }catch(err){
 
-    console.log("AI ERROR:", err);
+    console.log("💥 FETCH ERROR:", err);
 
     await addDoc(ref(),{
       user:"🤖 Nexus",
-      text:"AI bağlantı hatası",
+      text:"Network/API hatası: console’a bak",
       time:Date.now()
     });
 
