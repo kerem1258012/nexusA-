@@ -139,7 +139,7 @@ window.createChannel = function(){
 ========================= */
 window.nexusAI = async function(text){
 
-  const API_KEY = "AQ.Ab8RN6LcpLsg8RHPZRon3xW4PoRdQp6WlFijRH2mEsw7nnRvCg";
+  const API_KEY = "AIzaSyBOs03RRrgaiJ-S_QXCgT3sTAf7pLQ4lzw";
 
   const prompt = text.replace("@nexus","");
 
