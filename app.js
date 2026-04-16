@@ -62,7 +62,7 @@ function ref(){
 }
 
 /* =========================
-   REALTIME CHAT (FIXED)
+   REALTIME CHAT
 ========================= */
 function listen(){
 
@@ -135,7 +135,7 @@ window.createChannel = function(){
 };
 
 /* =========================
-   AI FIX (GROQ STABLE)
+   AI (GROQ FREE STABLE FIX)
 ========================= */
 window.nexusAI = async function(text){
 
@@ -148,18 +148,19 @@ window.nexusAI = async function(text){
         "Content-Type":"application/json"
       },
       body:JSON.stringify({
-        model:"llama3-8b-8192",
+        model:"llama-3.1-70b-versatile",
         messages:[
           {
             role:"system",
-            content:"Sen Nexus AI'sın. Türkçe kısa ve net cevap ver."
+            content:"Sen Nexus AI'sın. Türkçe konuş, kısa ve net cevap ver."
           },
           {
             role:"user",
             content:text.replace("@nexus","")
           }
         ],
-        temperature:0.7
+        temperature:0.7,
+        max_tokens:500
       })
     });
 
