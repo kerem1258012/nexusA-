@@ -1,143 +1,163 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* =========================
+   FIREBASE SETUP (SENİN PROJE)
+========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCwG8Cq5Gy1F7H5VP0W76pphhTJgJnEfcw",
+  authDomain: "ai-studio-applet-webapp-b12c3.firebaseapp.com",
+  projectId: "ai-studio-applet-webapp-b12c3",
+  storageBucket: "ai-studio-applet-webapp-b12c3.firebasestorage.app",
+  messagingSenderId: "338508580619",
+  appId: "1:338508580619:web:5a3e8445710652a125440e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* =========================
+   USER SYSTEM
+========================= */
 let user = localStorage.getItem("user");
 
 if(!user){
-  user = prompt("kullanıcı adı:");
-  localStorage.setItem("user",user);
+  user = prompt("Kullanıcı adı gir:");
+  localStorage.setItem("user", user);
 }
 
-document.getElementById("user").innerText=user;
+document.getElementById("user").innerText = user;
 
-/* STATE */
-let channel="genel";
-let db=JSON.parse(localStorage.getItem("db")||"{}");
-let files=JSON.parse(localStorage.getItem("files")||"[]");
+/* =========================
+   STATE
+========================= */
+let channel = "genel";
 
-if(!db.genel) db.genel=[];
-
-/* SAVE */
-function save(){
-  localStorage.setItem("db",JSON.stringify(db));
-  localStorage.setItem("files",JSON.stringify(files));
+/* =========================
+   FIRESTORE REF
+========================= */
+function ref(){
+  return collection(db, "channels", channel, "messages");
 }
 
-/* CHANNEL */
-function createChannel(){
-  let n=prompt("kanal adı");
-  if(!n) return;
-  db[n]=[];
-  renderChannels();
-}
+/* =========================
+   REALTIME CHAT LISTENER
+========================= */
+function listen(){
+  const q = query(ref(), orderBy("time","asc"));
 
-/* RENDER CHANNELS */
-function renderChannels(){
-  let box=document.getElementById("channels");
-  box.innerHTML="";
+  onSnapshot(q, (snap)=>{
+    const box = document.getElementById("messages");
+    box.innerHTML = "";
 
-  Object.keys(db).forEach(c=>{
-    let d=document.createElement("div");
-    d.innerText="# "+c;
-    d.onclick=()=>switchC(c);
-    box.appendChild(d);
-  });
-}
+    snap.forEach(doc=>{
+      const m = doc.data();
 
-function switchC(c){
-  channel=c;
-  document.getElementById("title").innerText="# "+c;
-  render();
-}
+      const div = document.createElement("div");
+      div.className = "msg " + (m.user === user ? "me" : "");
+      div.innerText = m.user + ": " + m.text;
 
-/* SEND */
-function send(){
-  let input=document.getElementById("input");
-  let text=input.value;
-  if(!text) return;
-
-  if(!db[channel]) db[channel]=[];
-
-  db[channel].push({user,text});
-  input.value="";
-
-  /* FILE */
-  if(text.startsWith("#")){
-    files.push({name:text.slice(1),content:""});
-    renderFiles();
-  }
-
-  /* AI HOOK */
-  if(text.startsWith("@nexus")){
-    ai(text);
-  }
-
-  save();
-  render();
-}
-
-/* RENDER CHAT */
-function render(){
-  let box=document.getElementById("messages");
-  box.innerHTML="";
-
-  (db[channel]||[]).forEach(m=>{
-    let d=document.createElement("div");
-    d.className="msg "+(m.user===user?"me":"");
-    d.innerText=m.user+": "+m.text;
-    box.appendChild(d);
-  });
-
-  box.scrollTop=box.scrollHeight;
-}
-
-/* FILE SYSTEM */
-function renderFiles(){
-  let box=document.querySelector(".files");
-  box.innerHTML="";
-
-  files.forEach((f,i)=>{
-    let d=document.createElement("div");
-    d.innerText=f.name;
-
-    d.onclick=()=>{
-      document.getElementById("code").value=f.content;
-      window.cur=i;
-    };
-
-    box.appendChild(d);
-  });
-}
-
-function newFile(){
-  let n=prompt("file");
-  files.push({name:n,content:""});
-  renderFiles();
-  save();
-}
-
-function saveFile(){
-  if(window.cur==null) return;
-  files[window.cur].content=document.getElementById("code").value;
-  save();
-}
-
-function run(){
-  document.getElementById("terminal").innerText=
-  document.getElementById("code").value;
-}
-
-/* AI (SIMPLIFIED HOOK) */
-function ai(text){
-  setTimeout(()=>{
-    db[channel].push({
-      user:"Nexus",
-      text:"AI: "+text.replace("@nexus","")
+      box.appendChild(div);
     });
 
-    render();
-    save();
-  },600);
+    box.scrollTop = box.scrollHeight;
+  });
 }
 
-/* INIT */
-renderChannels();
-render();
-renderFiles();
+listen();
+
+/* =========================
+   SEND MESSAGE (FIXED)
+========================= */
+window.send = async function(){
+
+  const input = document.getElementById("input");
+  const text = input.value;
+
+  if(!text) return;
+
+  await addDoc(ref(),{
+    user,
+    text,
+    time:Date.now()
+  });
+
+  input.value = "";
+
+  /* AI TRIGGER */
+  if(text.startsWith("@nexus")){
+    window.nexusAI(text);
+  }
+};
+
+/* =========================
+   CHANNEL SYSTEM (SIMPLE FIX)
+========================= */
+window.createChannel = function(){
+  const name = prompt("kanal adı:");
+  if(!name) return;
+
+  channel = name;
+  document.getElementById("title").innerText = "# " + name;
+
+  listen();
+};
+
+/* =========================
+   AI (GROQ FIX - WORKING)
+========================= */
+window.nexusAI = async function(text){
+
+  try{
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer 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",
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        model:"llama3-70b-8192",
+        messages:[
+          {
+            role:"system",
+            content:"Sen Nexus AI'sın. Türkçe konuş, kısa cevap ver."
+          },
+          {
+            role:"user",
+            content:text
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+
+    const reply = data?.choices?.[0]?.message?.content || "AI cevap veremedi";
+
+    // 🔥 KRİTİK: CHAT’E YAZ
+    await addDoc(ref(),{
+      user:"🤖 Nexus",
+      text:reply,
+      time:Date.now()
+    });
+
+  }catch(err){
+
+    console.log("AI error:",err);
+
+    await addDoc(ref(),{
+      user:"🤖 Nexus",
+      text:"AI bağlantı hatası",
+      time:Date.now()
+    });
+
+  }
+};
