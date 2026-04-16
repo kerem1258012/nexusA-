@@ -8,9 +8,7 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* =========================
-   FIREBASE SETUP (SENİN PROJE)
-========================= */
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyCwG8Cq5Gy1F7H5VP0W76pphhTJgJnEfcw",
   authDomain: "ai-studio-applet-webapp-b12c3.firebaseapp.com",
@@ -23,22 +21,31 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* =========================
-   USER SYSTEM
-========================= */
+/* USER */
 let user = localStorage.getItem("user");
 
 if(!user){
-  user = prompt("Kullanıcı adı gir:");
+  user = prompt("Kullanıcı adı:");
   localStorage.setItem("user", user);
 }
 
-document.getElementById("user").innerText = user;
-
-/* =========================
-   STATE
-========================= */
+/* STATE */
 let channel = "genel";
+let unsubscribe = null;
+
+/* UI SAFE */
+function el(id){
+  return document.getElementById(id);
+}
+
+/* INIT USER */
+window.addEventListener("DOMContentLoaded", ()=>{
+  const u = el("user");
+  if(u) u.innerText = user;
+
+  const t = el("title");
+  if(t) t.innerText = "# genel";
+});
 
 /* =========================
    FIRESTORE REF
@@ -48,13 +55,19 @@ function ref(){
 }
 
 /* =========================
-   REALTIME CHAT LISTENER
+   LISTENER FIX (IMPORTANT)
 ========================= */
 function listen(){
+
+  if(unsubscribe) unsubscribe();
+
   const q = query(ref(), orderBy("time","asc"));
 
-  onSnapshot(q, (snap)=>{
-    const box = document.getElementById("messages");
+  unsubscribe = onSnapshot(q, snap=>{
+
+    const box = el("messages");
+    if(!box) return;
+
     box.innerHTML = "";
 
     snap.forEach(doc=>{
@@ -74,13 +87,14 @@ function listen(){
 listen();
 
 /* =========================
-   SEND MESSAGE (FIXED)
+   SEND MESSAGE FIX
 ========================= */
 window.send = async function(){
 
-  const input = document.getElementById("input");
-  const text = input.value;
+  const input = el("input");
+  if(!input) return;
 
+  const text = input.value.trim();
   if(!text) return;
 
   await addDoc(ref(),{
@@ -91,27 +105,29 @@ window.send = async function(){
 
   input.value = "";
 
-  /* AI TRIGGER */
   if(text.startsWith("@nexus")){
     window.nexusAI(text);
   }
 };
 
 /* =========================
-   CHANNEL SYSTEM (SIMPLE FIX)
+   CHANNEL FIX (REAL SWITCH)
 ========================= */
 window.createChannel = function(){
+
   const name = prompt("kanal adı:");
   if(!name) return;
 
   channel = name;
-  document.getElementById("title").innerText = "# " + name;
+
+  const title = el("title");
+  if(title) title.innerText = "# " + name;
 
   listen();
 };
 
 /* =========================
-   AI (GROQ FIX - WORKING)
+   AI FIX (SAFE + WORKING)
 ========================= */
 window.nexusAI = async function(text){
 
@@ -140,9 +156,8 @@ window.nexusAI = async function(text){
 
     const data = await res.json();
 
-    const reply = data?.choices?.[0]?.message?.content || "AI cevap veremedi";
+    const reply = data?.choices?.[0]?.message?.content || "AI cevap yok";
 
-    // 🔥 KRİTİK: CHAT’E YAZ
     await addDoc(ref(),{
       user:"🤖 Nexus",
       text:reply,
@@ -151,11 +166,11 @@ window.nexusAI = async function(text){
 
   }catch(err){
 
-    console.log("AI error:",err);
+    console.log(err);
 
     await addDoc(ref(),{
       user:"🤖 Nexus",
-      text:"AI bağlantı hatası",
+      text:"AI hata verdi",
       time:Date.now()
     });
 
