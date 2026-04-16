@@ -1,68 +1,148 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Yardımcı Ai/title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
-
 <body>
 
-<div class="app">
+<div class="app-shell">
+    <!-- 1. EN SOL: AKTİVİTE ÇUBUĞU (Activity Bar) -->
+    <aside class="activity-bar">
+        <div class="top-icons">
+            <div class="a-icon active" title="Sohbet"><i class="fas fa-comment-alt"></i>💬</div>
+            <div class="a-icon" title="Dosyalar"><i class="fas fa-copy"></i>📂</div>
+            <div class="a-icon" title="Arama"><i class="fas fa-search"></i>🔍</div>
+            <div class="a-icon" title="Eklentiler"><i class="fas fa-box"></i>📦</div>
+        </div>
+        <div class="bottom-icons">
+            <div class="a-icon" title="Profil"><i class="fas fa-user-circle"></i>👤</div>
+            <div class="a-icon" title="Ayarlar"><i class="fas fa-cog"></i>⚙️</div>
+        </div>
+    </aside>
 
-<!-- LEFT -->
-<div class="sidebar">
+    <!-- 2. SOL PANEL: KANALLAR VE DOSYA LİSTESİ -->
+    <aside class="side-panel">
+        <div class="panel-section">
+            <div class="section-header">
+                <span>KANALLAR</span>
+                <button onclick="createChannel()" class="icon-btn">+</button>
+            </div>
+            <div id="channels-list" class="item-list">
+                <!-- Kanallar buraya gelecek -->
+            </div>
+        </div>
 
-  <div class="profile">
-    <div class="avatar"></div>
-    <div>
-      <div id="user">user</div>
-      <small>online</small>
-    </div>
-  </div>
+        <div class="panel-section">
+            <div class="section-header">
+                <span>DOSYALAR</span>
+                <button onclick="newFile()" class="icon-btn">+</button>
+            </div>
+            <div id="files-list" class="item-list">
+                <!-- Dosyalar buraya gelecek -->
+            </div>
+        </div>
 
-  <div class="section">KANALLAR</div>
-  <div id="channels"></div>
+        <div class="user-footer">
+            <div class="u-info">
+                <div class="u-avatar"></div>
+                <div class="u-text">
+                    <div id="user-display">Kullanıcı</div>
+                    <small>Online</small>
+                </div>
+            </div>
+            <div class="u-actions">
+                <button title="Mikrofon">🎤</button>
+                <button title="Kulaklık">🎧</button>
+            </div>
+        </div>
+    </aside>
 
-  <button onclick="createChannel()">+ Kanal</button>
+    <!-- 3. ORTA PANEL: SOHBET -->
+    <main class="main-chat">
+        <header class="main-header">
+            <div class="header-left">
+                <span class="hash">#</span>
+                <h2 id="current-channel-title">genel</h2>
+                <span class="separator">|</span>
+                <small class="topic">Nexus AI ile geliştirme kanalı</small>
+            </div>
+            <div class="header-right">
+                <button>🔔</button>
+                <button>📌</button>
+                <button>👥</button>
+                <div class="search-mini">
+                    <input type="text" placeholder="Ara...">
+                </div>
+            </div>
+        </header>
 
-</div>
+        <div id="messages-container" class="messages-container">
+            <!-- Hoşgeldin Mesajı -->
+            <div class="system-msg">
+                <div class="line"></div>
+                <span>Nexus Studio'ya Hoş Geldin! AI tetiklemek için <b>@nexus</b> kullan.</span>
+                <div class="line"></div>
+            </div>
+        </div>
 
-<!-- CHAT -->
-<div class="chat">
+        <div class="chat-input-area">
+            <div class="input-container">
+                <button class="attach-btn">+</button>
+                <div class="input-wrapper">
+                    <input id="chat-input" placeholder="#kanal adı veya @nexus yazarak başla..." onkeydown="if(event.key==='Enter') send()">
+                </div>
+                <div class="input-actions">
+                    <button onclick="send()" class="send-btn">GÖNDER</button>
+                </div>
+            </div>
+        </div>
+    </main>
 
-  <div class="header" id="title"># genel</div>
+    <!-- 4. SAĞ PANEL: EDİTÖR -->
+    <section class="editor-panel">
+        <div class="tabs-bar" id="editor-tabs">
+            <div class="tab active">Giriş.txt</div>
+        </div>
 
-  <div id="messages"></div>
+        <div class="editor-view">
+            <div class="line-numbers">
+                <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            </div>
+            <textarea id="code-textarea" spellcheck="false" placeholder="// Kodlar buraya gelecek..."></textarea>
+        </div>
 
-  <div class="input">
-    <input id="input" placeholder="@nexus yaz... #file oluştur">
-    <button onclick="send()">➤</button>
-  </div>
+        <div class="editor-controls">
+            <div class="c-left">
+                <button onclick="downloadActiveFile()" class="btn-primary">💾 İndir</button>
+                <button onclick="runCode()" class="btn-success">▶ Çalıştır</button>
+            </div>
+            <div class="c-right">
+                <span id="active-filename-display">index.js</span>
+            </div>
+        </div>
 
-</div>
+        <div class="terminal-container">
+            <div class="term-header">
+                <span>TERMINAL</span>
+                <button onclick="el('terminal-output').innerText=''">Temizle</button>
+            </div>
+            <div id="terminal-output" class="term-body">Nexus Terminal v1.0.0 hazır...</div>
+        </div>
 
-<!-- EDITOR -->
-<div class="editor">
-
-  <div class="files" id="files"></div>
-
-  <textarea id="code"></textarea>
-
-  <div class="bar">
-    <button onclick="newFile()">New</button>
-    <button onclick="saveFile()">Save</button>
-    <button onclick="run()">Run</button>
-  </div>
-
-  <div id="terminal"></div>
-
-</div>
-
+        <div class="status-bar">
+            <span>Ln 1, Col 1</span>
+            <span>UTF-8</span>
+            <span>JavaScript</span>
+            <span class="sync">● Synced with Firebase</span>
+        </div>
+    </section>
 </div>
 
 <script type="module" src="app.js"></script>
-
 </body>
 </html>
