@@ -1,83 +1,58 @@
-body{
+*{
   margin:0;
+  padding:0;
+  box-sizing:border-box;
   font-family:system-ui;
+}
+
+body{
   background:#0b0f14;
   color:white;
 }
 
+/* APP */
 .app{
   display:flex;
   height:100vh;
 }
 
-/* SERVERS */
-.servers{
-  width:70px;
-  background:#111827;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-.logo{
-  width:40px;
-  height:40px;
-  background:#5865f2;
-  margin:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:10px;
-}
-
-.srv{
-  width:40px;
-  height:40px;
-  margin:5px;
-  background:#1f2937;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-}
-
-.srv.active{
-  background:#22c55e;
-}
-
-/* CHANNELS */
-.channels{
+/* SIDEBAR */
+.sidebar{
   width:260px;
   background:#111827;
-  padding:10px;
+  padding:12px;
 }
 
-.userBox{
-  background:#1f2937;
+.profile{
+  display:flex;
+  gap:10px;
+  align-items:center;
   padding:10px;
-  border-radius:8px;
+  background:#1f2937;
+  border-radius:10px;
   margin-bottom:10px;
 }
 
-.title{
+.avatar{
+  width:35px;
+  height:35px;
+  border-radius:50%;
+  background:#5865f2;
+}
+
+.section{
   font-size:12px;
   opacity:.6;
-  margin-top:10px;
+  margin:10px 0;
 }
 
-.cmdHint{
-  font-size:11px;
-  opacity:.6;
-  margin-top:10px;
-}
-
-#channelList div{
+#channels div{
   padding:8px;
+  border-radius:6px;
   cursor:pointer;
 }
 
-#channelList div:hover{
+#channels div:hover{
   background:#1f2937;
 }
 
@@ -89,8 +64,9 @@ body{
 }
 
 .header{
-  padding:10px;
+  padding:12px;
   background:#111827;
+  border-bottom:1px solid #1f2937;
 }
 
 #messages{
@@ -112,12 +88,6 @@ body{
   margin-left:auto;
 }
 
-#typing{
-  font-size:12px;
-  opacity:.6;
-  padding-left:10px;
-}
-
 .input{
   display:flex;
   padding:10px;
@@ -127,8 +97,8 @@ body{
 input{
   flex:1;
   padding:10px;
-  background:#1f2937;
   border:none;
+  background:#1f2937;
   color:white;
 }
 
@@ -136,6 +106,8 @@ button{
   background:#5865f2;
   border:none;
   color:white;
+  padding:10px;
+  cursor:pointer;
 }
 
 /* EDITOR */
@@ -147,29 +119,21 @@ button{
   flex-direction:column;
 }
 
-.fileHeader{
-  padding:10px;
-  background:#111827;
-}
-
-#files div{
+.files div{
   padding:8px;
   border-bottom:1px solid #1f2937;
   cursor:pointer;
 }
 
-#files div:hover{
-  background:#1f2937;
-}
-
-#editor{
+textarea{
   flex:1;
   background:#0b0f14;
-  color:white;
   border:none;
+  color:white;
+  padding:10px;
 }
 
-.editorBar{
+.bar{
   display:flex;
   gap:5px;
   padding:5px;
@@ -179,5 +143,12 @@ button{
   height:100px;
   background:black;
   font-size:12px;
+  padding:5px;
   overflow:auto;
+}
+
+/* MOBILE */
+@media(max-width:900px){
+  .editor{display:none;}
+  .sidebar{width:200px;}
 }
